@@ -48,9 +48,16 @@
     + PATCH /api/foods/restore/:id
         -> Khôi phục món ăn đã bị xóa mềm
 - API Auth
-    + GET /api/auth
-        -> Tìm kiếm user theo email
-    + POST /api/auth
+    + POST /api/auth/login
+        -> Tìm kiếm user theo email để đăng nhập
+    + POST /api/auth/register
         -> Tạo một user mới (có kiểm tra trùng email và mã hóa mật khẩu bằng bcrypt)
     + PUT /api/auth
         -> Cập nhật thông tin user (có kiểm tra trùng email và mã hóa mật khẩu bằng bcrypt);
+
+****** FRONTEND ****
+- Auth
+    + Đăng nhập người dùng (hiển thị toast)
+- Ingredients
+    + Hiển thị danh sách nguyên liệu
+    + Xóa nguyên liệu có ràng buộc (không được sử dụng trong món)
