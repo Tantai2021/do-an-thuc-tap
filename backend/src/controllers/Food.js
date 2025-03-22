@@ -3,12 +3,38 @@ const { Op } = require('sequelize');
 const Food = {
     getFoods: async (req, res) => {
         try {
-            const foods = await models.Food.findAll({
-                where: { is_deleted: false }
+            let { page } = req.query;
+
+            page = parseInt(page) || 1;
+            limit = 7;
+
+            if (page < 1) page = 1;
+
+            const offset = (page - 1) * limit;
+
+            // Lấy danh sách món ăn theo phân trang
+            const { count, rows: foods } = await models.Food.findAndCountAll({
+                where: { is_deleted: false },
+                include: {
+                    model: models.Category,
+                    attributes: ["name"]
+                },
+                limit: limit,
+                offset: offset
             });
-            if (foods.length == 0)
+
+            if (foods.length === 0) {
                 return res.status(404).json({ message: "Không có món ăn nào" });
-            else return res.status(200).json({ message: "Danh sách món ăn", foods: foods });
+            }
+
+            return res.status(200).json({
+                message: "Danh sách món ăn",
+                foods,
+                currentPage: page,
+                totalPages: Math.ceil(count / limit),
+                totalItems: count,
+                pageSize: limit
+            });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi lấy danh sách món" });

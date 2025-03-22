@@ -26,6 +26,8 @@
         -> Xóa mềm nhiều nguyên liệu (có kiểm tra những nguyên liệu đang được sử dụng)
     + PATCH /api/ingredients/restore/:id
         -> Khôi phục nguyên liệu
+    + PATCH /api/ingredients/restore/bulk-restore
+        -> Khôi phục nhiều nguyên liệu nguyên liệu
 - API Foods:
     + GET /api/foods/
         -> Lấy tất cả món ăn (chưa bị xóa mềm)

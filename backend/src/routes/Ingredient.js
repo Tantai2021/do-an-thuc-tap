@@ -13,5 +13,6 @@ router.post('/', IngredientController.addIngredient); // Thêm nguyên liệu m�
 router.put('/:id', IngredientController.updateIngredient); // Cập nhật nguyên liệu
 router.delete('/bulk-delete', IngredientController.deleteIngredients); // Xóa mềm nhiều nguyên liệu
 router.delete('/:id', IngredientController.deleteIngredient); // Xóa mềm nguyên liệu
+router.patch('/restore/bulk-restore', IngredientController.restoreIngredients); // Khôi phục nhiều nguyên liệu
 router.patch('/restore/:id', IngredientController.restoreIngredient); // Khôi phục nguyên liệu
 module.exports = router;

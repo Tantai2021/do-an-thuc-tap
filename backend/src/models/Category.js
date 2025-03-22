@@ -2,7 +2,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db/database');
 
-const Category = sequelize.define('foods', {
+const Category = sequelize.define('categories', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -13,7 +13,7 @@ const Category = sequelize.define('foods', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    
+
 }, {
     timestamps: true,
 });

@@ -1,14 +1,36 @@
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const models = require('../models/index');
 
 const Ingredient = {
     getIngredients: async (req, res) => {
         try {
-            const ingredients = await models.Ingredient.findAll({
+            let { page } = req.query;
+            page = parseInt(page) || 1;
+            limit = 7;
+            const offset = (page - 1) * limit;
+
+            // Lấy tổng số nguyên liệu để tính tổng số trang
+            const totalIngredients = await models.Ingredient.count({
                 where: { is_deleted: false }
             });
-            if (ingredients.length == 0) return res.status(400).json({ message: "Không có nguyên liệu" })
-            return res.status(200).json(ingredients);
+
+            const ingredients = await models.Ingredient.findAll({
+                where: { is_deleted: false },
+                limit: limit,
+                offset: offset,
+            });
+
+            if (ingredients.length === 0) {
+                return res.status(404).json({ message: "Không có nguyên liệu nào" });
+            }
+
+            return res.status(200).json({
+                totalItems: totalIngredients,
+                totalPages: Math.ceil(totalIngredients / limit),
+                currentPage: page,
+                data: ingredients
+            });
+
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu", error });
@@ -16,16 +38,42 @@ const Ingredient = {
     },
     getIngredientDeleted: async (req, res) => {
         try {
-            const ingredients = await models.Ingredient.findAll({
+            let { page } = req.query;
+
+            // Chuyển đổi thành số nguyên và đặt giá trị mặc định nếu không có
+            page = parseInt(page) || 1;
+            limit = 7;
+            const offset = (page - 1) * limit;
+
+            // Đếm tổng số nguyên liệu đã xóa
+            const totalDeletedIngredients = await models.Ingredient.count({
                 where: { is_deleted: true }
             });
-            if (ingredients.length == 0) return res.status(400).json({ message: "Không có nguyên liệu" })
-            return res.status(200).json(ingredients);
+
+            // Lấy danh sách nguyên liệu đã xóa với phân trang
+            const ingredients = await models.Ingredient.findAll({
+                where: { is_deleted: true },
+                limit: limit,
+                offset: offset,
+            });
+
+            if (ingredients.length === 0) {
+                return res.status(404).json({ message: "Không có nguyên liệu đã xóa" });
+            }
+
+            return res.status(200).json({
+                totalItems: totalDeletedIngredients,
+                totalPages: Math.ceil(totalDeletedIngredients / limit),
+                currentPage: page,
+                data: ingredients
+            });
+
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu", error });
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu đã xóa", error });
         }
     },
+
     getIngredientById: async (req, res) => {
         try {
             const ingredientId = req.params.id;
@@ -52,6 +100,7 @@ const Ingredient = {
             });
             if (existIngredient) return res.status(400).json({ message: "Tên nguyên liệu đã tồn tại" });
             const newIngredient = await models.Ingredient.create({
+                id: Ingredient.generateIngredientCode(),
                 name: name,
                 unit: unit
             });
@@ -125,7 +174,7 @@ const Ingredient = {
                 where: { id: ingredientId, is_deleted: true }
             });
             if (!existIngredient)
-                return res.status(404).json({ message: "Không tìm thấy nguyên liệu bị xóa" });
+                return res.status(404).json({ message: "Không tìm thấy nguyên liệu cần khôi phục" });
             const restoredIngredient = await existIngredient.update({
                 is_deleted: false
             })
@@ -136,9 +185,41 @@ const Ingredient = {
             return res.status(500).json({ message: "Lỗi khi khôi phục nguyên liệu" });
         }
     },
+    restoreIngredients: async (req, res) => {
+        try {
+            const { ingredientIds } = req.body;
+            console.log(ingredientIds);
+
+            if (Array.isArray(ingredientIds) && ingredientIds.length === 0)
+                return res.status(404).json({ message: "Danh sách nguyên liệu cần khôi phục không hợp lệ" });
+
+            const existIngredients = await models.Ingredient.findAll({
+                where: {
+                    id: { [Op.in]: ingredientIds },
+                    is_deleted: true
+                }
+            });
+            if (existIngredients.length === 0)
+                return res.status(404).json({ message: "Không tìm thấy những nguyên liệu cần khôi phục" });
+
+            await models.Ingredient.update(
+                { is_deleted: false },
+                { where: { id: { [Op.in]: ingredientIds } } }
+            );
+            const ingredients = await models.Ingredient.findAll(
+                { where: { is_deleted: true } }
+            );
+            return res.status(200).json({ message: `Đã khôi phục ${existIngredients.length} nguyên liệu`, ingredients });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi khi khôi phục nhiều nguyên liệu" });
+        }
+    },
     deleteIngredients: async (req, res) => {
         try {
             const { ingredientIds } = req.body;
+            console.log(ingredientIds);
+
             if (!ingredientIds || !Array.isArray(ingredientIds) || ingredientIds.length === 0)
                 return res.status(404).json({ message: "Danh sách nguyên liệu không hợp lệ" });
 
@@ -176,17 +257,18 @@ const Ingredient = {
     },
     findIngredients: async (req, res) => {
         try {
-            const { ingredientId, name, unit } = req.body;
-            if (!ingredientId && !name && !unit) {
-                return res.status(400).json({ message: "Vui lòng cung cấp ít nhất một tiêu chí tìm kiếm" });
+            const { query } = req.query;
+            if (query === "") {
+                const allIngredients = await models.Ingredient.findAll();
+                return res.status(200).json({ message: `Tìm thấy ${allIngredients.length} nguyên liệu`, data: allIngredients });
             }
-            let conditions = [];
-            if (ingredientId) conditions.push({ id: ingredientId });
-            if (name) conditions.push({ name: { [Op.like]: `%${name}%` } });
-            if (unit) conditions.push({ unit: unit });
             const foundIngredients = await models.Ingredient.findAll({
                 where: {
-                    [Op.or]: conditions
+                    [Op.or]: [
+                        { id: { [Op.like]: `%${query}%` } },
+                        { name: { [Op.like]: `%${query}%` } },
+                        { unit: { [Op.like]: `%${query}%` } },
+                    ]
                 }
             });
             if (foundIngredients.length === 0)
@@ -196,6 +278,10 @@ const Ingredient = {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi thực hiện tìm nguyên liệu" });
         }
+    },
+    generateIngredientCode: () => {
+        return Math.floor(100000 + Math.random() * 900000).toString();
     }
+
 };
 module.exports = Ingredient;
