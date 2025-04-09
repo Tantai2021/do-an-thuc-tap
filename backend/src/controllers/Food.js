@@ -29,7 +29,7 @@ const Food = {
 
             return res.status(200).json({
                 message: "Danh sách món ăn",
-                foods,
+                data: foods,
                 currentPage: page,
                 totalPages: Math.ceil(count / limit),
                 totalItems: count,
@@ -246,32 +246,43 @@ const Food = {
     },
     findFoods: async (req, res) => {
         try {
-            const { foodId, name, category_id, minPrice, maxPrice } = req.query;
+            const { foodId, name, category_id, minPrice, maxPrice, page = 1, limit = 7 } = req.query;
+            console.log(req.query);
 
             if (!foodId && !name && !category_id && !minPrice && !maxPrice)
                 return res.status(400).json({ message: "Vui lòng cung cấp ít nhất một tiêu chí tìm kiếm" });
+
             const conditions = [];
-            if (foodId) conditions.push({ id: foodId, is_deleted: false });
+            if (foodId) conditions.push({ id: { [Op.like]: `%${foodId}%` }, is_deleted: false });
             if (name) conditions.push({ name: { [Op.like]: `%${name}%` }, is_deleted: false });
             if (category_id) conditions.push({ category_id: category_id, is_deleted: false });
 
             if (minPrice && maxPrice)
                 conditions.push({ price: { [Op.between]: [minPrice, maxPrice] }, is_deleted: false });
             else if (minPrice)
-                conditions.push({ price: { [Op.lte]: minPrice }, is_deleted: false });
-            else
-                conditions.push({ price: { [Op.gte]: maxPrice }, is_deleted: false });
+                conditions.push({ price: { [Op.gte]: minPrice }, is_deleted: false });
+            else if (maxPrice)
+                conditions.push({ price: { [Op.lte]: maxPrice }, is_deleted: false });
 
-            const foundFoods = await models.Food.findAll({
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            const { count, rows } = await models.Food.findAndCountAll({
                 where: { [Op.or]: conditions },
                 include: {
                     model: models.Category,
                     attributes: ["name"]
-                }
+                },
+                limit: parseInt(limit),
+                offset: offset
             });
-            if (foundFoods.length === 0)
-                return res.status(400).json({ message: "Không tìm thấy món nào" });
-            return res.status(200).json({ message: `Đã tìm thấy ${foundFoods.length} món ăn`, foundFoods });
+
+            return res.status(200).json({
+                data: rows,
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(count / limit),
+                totalItems: count
+            });
+
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi tìm kiếm nguyên liệu" });
