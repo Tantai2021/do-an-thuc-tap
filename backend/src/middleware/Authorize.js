@@ -1,9 +1,7 @@
 // authorize.js
-function authorize() {
-    const allowedRoles = ['chef', 'accounting', 'manager', 'carely', 'admin'];
+const authorize = (allowedRoles = []) => {
     return (req, res, next) => {
         const user = req.user;
-
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: No user info' });
         }

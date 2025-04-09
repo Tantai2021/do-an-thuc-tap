@@ -257,17 +257,26 @@ const Ingredient = {
     },
     findIngredients: async (req, res) => {
         try {
-            const { id, name, unit } = req.query;
+            const { id, name, unit, page = 1, limit = 7 } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
             const whereClause = {};
 
             if (id) whereClause.id = { [Op.like]: `%${id}%` };
             if (name) whereClause.name = { [Op.like]: `%${name}%` };
             if (unit) whereClause.unit = { [Op.like]: `%${unit}%` };
 
-            const foundIngredients = await models.Ingredient.findAll({
-                where: whereClause
+            const { count, rows } = await models.Ingredient.findAndCountAll({
+                where: whereClause,
+                limit: parseInt(limit),
+                offset,
+                order: [['id', 'ASC']],
             });
-            return res.status(200).json({ foundIngredients });
+            return res.status(200).json({
+                data: rows,
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(count / limit),
+                totalItems: count,
+            });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi thực hiện tìm nguyên liệu" });

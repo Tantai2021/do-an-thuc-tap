@@ -7,7 +7,7 @@ const Recipe = {
         try {
             const foodId = req.params.foodId;
 
-            const food = await models.Food.findOne({ where: { id: foodId }, attributes: ["name", "image"] });
+            const food = await models.Food.findOne({ where: { id: foodId } });
 
             let recipes = await models.Recipe.findAll({
                 where: { food_id: foodId },
