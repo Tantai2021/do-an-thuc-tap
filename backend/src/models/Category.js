@@ -4,16 +4,19 @@ const sequelize = require('../db/database');
 
 const Category = sequelize.define('categories', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false
     },
     name: {
         type: DataTypes.STRING,
         allowNull: false
     },
-
+    is_deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    }
 }, {
     timestamps: true,
 });

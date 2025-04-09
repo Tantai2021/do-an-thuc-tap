@@ -5,9 +5,8 @@ const Category = require('./Category');
 
 const Food = sequelize.define('foods', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false
     },
     name: {
@@ -15,12 +14,16 @@ const Food = sequelize.define('foods', {
         allowNull: false
     },
     category_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         allowNull: false,
         references: {
             model: Category,
             key: 'id'
         }
+    },
+    image: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     price: {
         type: DataTypes.FLOAT,

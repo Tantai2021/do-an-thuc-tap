@@ -1,12 +1,12 @@
-// backend/src/models/Food_Ingredient.js
+// backend/src/models/Recipe.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db/database');
 const Food = require('./Food');
 const Ingredient = require('./Ingredient');
 
-const Food_Ingredient = sequelize.define('food_ingredients', {
+const Recipe = sequelize.define('recipes', {
     food_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         allowNull: false,
         references: {
             model: Food,
@@ -15,14 +15,13 @@ const Food_Ingredient = sequelize.define('food_ingredients', {
         primaryKey: true
     },
     ingredient_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         allowNull: false,
         references: {
             model: Ingredient,
             key: 'id'
         },
         primaryKey: true
-
     },
     quantity: {
         type: DataTypes.FLOAT,
@@ -32,9 +31,9 @@ const Food_Ingredient = sequelize.define('food_ingredients', {
     timestamps: true,
 });
 
-Food_Ingredient.belongsTo(Food, { foreignKey: 'food_id' });
-Food_Ingredient.belongsTo(Ingredient, { foreignKey: 'ingredient_id' });
-Food.hasMany(Food_Ingredient, { foreignKey: 'food_id' });
-Ingredient.hasMany(Food_Ingredient, { foreignKey: 'food_id' });
+Recipe.belongsTo(Food, { foreignKey: 'food_id' });
+Recipe.belongsTo(Ingredient, { foreignKey: 'ingredient_id' });
+Food.hasMany(Recipe, { foreignKey: 'food_id' });
+Ingredient.hasMany(Recipe, { foreignKey: 'ingredient_id' });
 
-module.exports = Food_Ingredient;
+module.exports = Recipe;

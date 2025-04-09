@@ -25,8 +25,8 @@ const OrderDetail = sequelize.define('order_details', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    subtotal: {
-        type: DataTypes.FLOAT,
+    sub_total: {
+        type: DataTypes.DECIMAL,
         allowNull: false
     }
 }, { timestamps: true });

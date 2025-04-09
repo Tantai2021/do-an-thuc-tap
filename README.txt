@@ -3,6 +3,8 @@
 * Trả về mã 404 khi không tìm thấy
 * Trả về mã 400 khi có lỗi thực thi
 * Trả về mã 200 khi thực thi thành công
+* Trả về mã 500 khi lỗi server
+* Chức năng phân trang cho những api trả về danh sách
 * CRUD: get, add, update, delete
 ---- Công việc hoàn thành -----
 - API Ingredients: 

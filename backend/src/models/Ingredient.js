@@ -4,9 +4,8 @@ const sequelize = require('../db/database');
 
 const Ingredient = sequelize.define('ingredients', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(6),
         primaryKey: true,
-        autoIncrement: true,
         allowNull: false
     },
     name: {
@@ -17,6 +16,11 @@ const Ingredient = sequelize.define('ingredients', {
     unit: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    quantity: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0
     },
     is_deleted: {
         type: DataTypes.BOOLEAN,

@@ -1,7 +1,10 @@
 const Food = require('./Food');
 const Ingredient = require('./Ingredient');
-const Food_Ingredient = require('./Food_Ingredient');
+const Recipe = require('./Recipe');
 const Category = require('./Category');
 const OrderDetail = require('./OrderDetail');
+const Order = require('./Order');
 const User = require('./User');
-module.exports = { Food, Ingredient, Food_Ingredient, Category, OrderDetail, User };
+const Table = require('./Table');
+const Area = require('./Area');
+module.exports = { Food, Ingredient, Recipe, Category, Order, OrderDetail, User, Table, Area };

@@ -3,10 +3,10 @@ const { Op } = require('sequelize');
 const Food = {
     getFoods: async (req, res) => {
         try {
-            let { page } = req.query;
+            let { page, limit } = req.query;
 
             page = parseInt(page) || 1;
-            limit = 7;
+            limit = parseInt(limit) || 7;
 
             if (page < 1) page = 1;
 
@@ -55,14 +55,34 @@ const Food = {
     },
     getFoodsDeleted: async (req, res) => {
         try {
-            const foods = await models.Food.findAll({
-                where: { is_deleted: true }
-            });
-            console.log(foods);
+            let { page, limit } = req.query;
 
-            if (foods.length == 0)
-                return res.status(404).json({ message: "Không có món ăn nào" });
-            else return res.status(200).json({ message: "Danh sách món ăn đã bị xóa", foods: foods });
+            page = parseInt(page) || 1;
+            limit = parseInt(limit) || 7;
+
+            if (page < 1) page = 1;
+
+            const offset = (page - 1) * limit;
+
+            // Lấy danh sách món ăn theo phân trang
+            const { count, rows: foods } = await models.Food.findAndCountAll({
+                where: { is_deleted: true },
+                include: {
+                    model: models.Category,
+                    attributes: ["name"]
+                },
+                limit: limit,
+                offset: offset
+            });
+
+            return res.status(200).json({
+                message: "Danh sách món ăn",
+                foods,
+                currentPage: page,
+                totalPages: Math.ceil(count / limit),
+                totalItems: count,
+                pageSize: limit
+            });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi lấy danh sách món" });
@@ -70,22 +90,33 @@ const Food = {
     },
     addFood: async (req, res) => {
         try {
-            const { name, category_id, price, description } = req.body;
+            const { name, category_id, image, price, description } = req.body;
 
-            if (!name || !category_id || !price)
+            if (!name || !category_id || !price || !image)
                 return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
             const existCategory = await models.Category.findOne({
                 where: { id: category_id }
             });
             if (!existCategory) return res.status(400).json({ message: "Danh mục không tồn tại" });
-            q
             const existFoodName = await models.Food.findOne({
                 where: { name: name }
             });
             if (existFoodName) return res.status(400).json({ message: "Tên món ăn đã tồn tại" });
+
+            let foodId;
+            let isUnique = false;
+            while (!isUnique) {
+                foodId = generateFoodCode();
+                const existCode = await models.Category.findOne({
+                    where: { id: foodId }
+                });
+                if (!existCode) isUnique = true;
+            }
             const newFood = await models.Food.create({
+                id: foodId,
                 name: name,
                 category_id: category_id,
+                image: image,
                 price: price,
                 description: description
             });
@@ -98,37 +129,41 @@ const Food = {
     updateFood: async (req, res) => {
         try {
             const foodId = req.params.id;
-            const { name, category_id, price, description } = req.body;
+            const { name, category_id, price, description, image } = req.body;
+            console.log(req.body);
 
-            if (!name || !category_id || !price || !foodId)
+            if (!name || !category_id || !price || !foodId || !image) {
                 return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
+            }
 
-            const existFood = await models.Food.findOne({
-                where: { id: foodId }
-            });
+            // 🔹 Kiểm tra món ăn hiện tại
+            const existFood = await models.Food.findOne({ where: { id: foodId } });
             if (!existFood) return res.status(404).json({ message: "Món ăn không tồn tại" });
 
+            // 🔹 Kiểm tra tên món có bị trùng không (trừ món hiện tại)
             const existFoodName = await models.Food.findOne({
                 where: { name: name, id: { [Op.ne]: foodId } }
             });
-            if (existFoodName)
-                return res.status(400).json({ message: "Tên món ăn đã tồn tại" });
+            if (existFoodName) return res.status(400).json({ message: "Tên món ăn đã tồn tại" });
 
-            const existCategory = await models.Category.findOne({
-                where: { id: category_id }
-            });
+            // 🔹 Kiểm tra danh mục có tồn tại không
+            const existCategory = await models.Category.findOne({ where: { id: category_id } });
             if (!existCategory) return res.status(400).json({ message: "Danh mục không tồn tại" });
 
-            const updatedFood = await models.Food.update({
-                name: name,
-                category_id: category_id,
-                price: price,
-                description: description
+            // 🔹 Tạo món ăn mới với ID mới
+            await models.Food.update({
+                name,
+                category_id,
+                price,
+                description,
+                image,
             }, { where: { id: foodId } });
-            if (updatedFood) return res.status(200).json({ message: "Cập nhật món ăn thành công", updatedFood });
+
+            return res.status(200).json({ message: "Cập nhật món ăn thành công!" });
+
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "Lỗi khi cập nhật món ăn mới" });
+            return res.status(500).json({ message: "Lỗi khi cập nhật món ăn" });
         }
     },
     deleteFood: async (req, res) => {
@@ -154,26 +189,45 @@ const Food = {
     deleteFoods: async (req, res) => {
         try {
             const { foodIds } = req.body;
-            if (!foodIds || !Array.isArray(foodIds) || foodIds.length === 0)
-                return res.status(404).json({ message: "Danh sách món cần xóa không hợp lệ" });
+            // Kiểm tra đầu vào hợp lệ
+            if (!Array.isArray(foodIds) || foodIds.length === 0) {
+                return res.status(400).json({ message: "Danh sách món cần xóa không hợp lệ" });
+            }
+
+            // Kiểm tra món nào đang được sử dụng trong OrderDetail
             const usedFoods = await models.OrderDetail.findAll({
                 where: { food_id: { [Op.in]: foodIds } },
-                attributes: ['food_id']
+                attributes: ['food_id'],
+                raw: true
             });
-            const usedFoodIds = usedFoods.map(item => item.food_id);
-            const unUsedFoodIds = foodIds.filter(id => !usedFoodIds.includes(id));
-            if (unUsedFoodIds.length == 0)
-                return res.status(400).json({ message: "Tất cả món đều được sử dụng" });
-            const [updatedFoods] = await models.Food.update(
+
+            const usedFoodIds = new Set(usedFoods.map(item => Number(item.food_id)));  // Tạo tập hợp ID đã sử dụng
+            const unUsedFoodIds = foodIds.filter(id => !usedFoodIds.has(Number(id)));  // Lọc món chưa dùng
+            console.log(usedFoodIds);
+            console.log(unUsedFoodIds);
+
+            if (unUsedFoodIds.length === 0) {
+                return res.status(400).json({ message: "Tất cả món ăn đều đang được sử dụng trong đơn hàng" });
+            }
+
+            // Cập nhật trạng thái is_deleted cho các món chưa được sử dụng
+            const updatedFoods = await models.Food.update(
                 { is_deleted: true },
-                { where: { id: { [Op.in]: unUsedFoodIds } } });
-            if (updatedFoods > 0)
-                return res.status(200).json({ message: `Đã xóa ${updatedFoods} món ăn`, usedFoodIds, unUsedFoodIds });
-            else
+                { where: { id: { [Op.in]: unUsedFoodIds } } }
+            );
+
+            if (updatedFoods[0] > 0) {
+                return res.status(200).json({
+                    message: `Đã xóa ${updatedFoods[0]} món ăn`,
+                    usedFoodIds,
+                    unUsedFoodIds
+                });
+            } else {
                 return res.status(400).json({ message: "Không có món nào được xóa" });
+            }
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "Lỗi khi nhiều món ăn" });
+            return res.status(500).json({ message: "Lỗi khi xóa nhiều món ăn" });
         }
     },
     restoreFood: async (req, res) => {
@@ -192,23 +246,28 @@ const Food = {
     },
     findFoods: async (req, res) => {
         try {
-            const { foodId, name, category_id, minPrice, maxPrice } = req.body;
+            const { foodId, name, category_id, minPrice, maxPrice } = req.query;
+
             if (!foodId && !name && !category_id && !minPrice && !maxPrice)
                 return res.status(400).json({ message: "Vui lòng cung cấp ít nhất một tiêu chí tìm kiếm" });
             const conditions = [];
-            if (foodId) conditions.push({ id: foodId });
-            if (name) conditions.push({ name: { [Op.like]: `%${name}%` } });
-            if (category_id) conditions.push({ category_id: category_id });
+            if (foodId) conditions.push({ id: foodId, is_deleted: false });
+            if (name) conditions.push({ name: { [Op.like]: `%${name}%` }, is_deleted: false });
+            if (category_id) conditions.push({ category_id: category_id, is_deleted: false });
 
             if (minPrice && maxPrice)
-                conditions.push({ price: { [Op.between]: [minPrice, maxPrice] } });
+                conditions.push({ price: { [Op.between]: [minPrice, maxPrice] }, is_deleted: false });
             else if (minPrice)
-                conditions.push({ price: { [Op.lte]: minPrice } });
+                conditions.push({ price: { [Op.lte]: minPrice }, is_deleted: false });
             else
-                conditions.push({ price: { [Op.gte]: maxPrice } });
+                conditions.push({ price: { [Op.gte]: maxPrice }, is_deleted: false });
 
             const foundFoods = await models.Food.findAll({
-                where: { [Op.or]: conditions }
+                where: { [Op.or]: conditions },
+                include: {
+                    model: models.Category,
+                    attributes: ["name"]
+                }
             });
             if (foundFoods.length === 0)
                 return res.status(400).json({ message: "Không tìm thấy món nào" });
@@ -217,6 +276,96 @@ const Food = {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi tìm kiếm nguyên liệu" });
         }
+    },
+    findFoodsDeleted: async (req, res) => {
+        try {
+            const { foodId, name, category_id, minPrice, maxPrice } = req.query;
+
+            if (!foodId && !name && !category_id && !minPrice && !maxPrice)
+                return res.status(400).json({ message: "Vui lòng cung cấp ít nhất một tiêu chí tìm kiếm" });
+            const conditions = [];
+            if (foodId) conditions.push({ id: foodId, is_deleted: true });
+            if (name) conditions.push({ name: { [Op.like]: `%${name}%` }, is_deleted: true });
+            if (category_id) conditions.push({ category_id: category_id, is_deleted: true });
+
+            if (minPrice && maxPrice)
+                conditions.push({ price: { [Op.between]: [minPrice, maxPrice] }, is_deleted: true });
+            else if (minPrice)
+                conditions.push({ price: { [Op.lte]: minPrice }, is_deleted: true });
+            else
+                conditions.push({ price: { [Op.gte]: maxPrice }, is_deleted: true });
+
+            const foundFoods = await models.Food.findAll({
+                where: { [Op.or]: conditions },
+                include: {
+                    model: models.Category,
+                    attributes: ["name"]
+                }
+            });
+            return res.status(200).json({ message: `Đã tìm thấy ${foundFoods.length} món ăn`, foundFoods });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi khi tìm kiếm món ăn" });
+        }
+    },
+    restoreFoods: async (req, res) => {
+        try {
+            const { foodIds } = req.body;
+            const { count, rows } = await models.Food.findAndCountAll({
+                where: { is_deleted: true, id: { [Op.in]: foodIds } },
+                attributes: ["id"]
+            });
+            const foodIdList = rows.map(food => food.id);
+
+            if (count === 0) return res.status(404).json({ message: "Không tìm thấy món cần khôi phục" });
+            await models.Food.update(
+                { is_deleted: false },
+                { where: { id: { [Op.in]: foodIdList } } });
+            return res.status(200).json({ message: "Khôi phục món ăn thành công" });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi khi khôi phục một món ăn" });
+        }
+    },
+    getFoodAvailable: async (req, res) => {
+        try {
+            const foods = await models.Food.findAll({
+                where: { is_deleted: false },
+                include: [
+                    {
+                        model: models.Recipe,
+                        include: {
+                            model: models.Ingredient,
+                            attributes: ["id", "name", "quantity"]
+                        }
+                    }
+                ]
+            });
+            console.log(foods);
+            const availableFoods = foods.map(food => {
+                let minPossible = Infinity;
+                food.FoodIngredients.forEach(ingredient => {
+                    if (ingredient.Ingredient) {
+                        const possible = Math.floor(ingredient.Ingredient.stock / ingredient.quantity);
+                        minPossible = Math.min(minPossible, possible);
+                    }
+                });
+                return {
+                    id: food.id,
+                    name: food.name,
+                    maxAvailable: minPossible === Infinity ? 0 : minPossible
+                };
+            });
+
+            return res.status(200).json({ message: "Số lượng món có thể chế biến", availableFoods });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi khi tính số lượng món có thể chế biến" });
+        }
     }
+};
+
+const generateFoodCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
 module.exports = Food;

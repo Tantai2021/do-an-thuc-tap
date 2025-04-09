@@ -90,7 +90,7 @@ const Ingredient = {
     addIngredient: async (req, res) => {
         try {
             const { name, unit } = req.body;
-            console.log(req.body)
+            console.log(name, unit);
 
             if (!name || !unit) {
                 return res.status(400).json({ message: "Tên và đơn vị nguyên liệu không được để trống" });
@@ -102,7 +102,7 @@ const Ingredient = {
             const newIngredient = await models.Ingredient.create({
                 id: Ingredient.generateIngredientCode(),
                 name: name,
-                unit: unit
+                unit: unit,
             });
             if (newIngredient) return res.status(200).json({ message: "Đã thêm nguyên liệu mới", newIngredient: newIngredient });
             else return res.status(400).json({ message: "Thêm nguyên liệu mới thất bại" });
@@ -150,7 +150,7 @@ const Ingredient = {
             if (!existIngredient)
                 return res.status(404).json({ message: "Không tồn tại nguyên liệu" });
 
-            const ingredientUsedInFood = await models.Food_Ingredient.findOne({
+            const ingredientUsedInFood = await models.Recipe.findOne({
                 where: { ingredient_id: ingredientId }
             });
             if (ingredientUsedInFood)
@@ -223,7 +223,7 @@ const Ingredient = {
             if (!ingredientIds || !Array.isArray(ingredientIds) || ingredientIds.length === 0)
                 return res.status(404).json({ message: "Danh sách nguyên liệu không hợp lệ" });
 
-            const usedIngredients = await models.Food_Ingredient.findAll({
+            const usedIngredients = await models.Recipe.findAll({
                 where: { ingredient_id: { [Op.in]: ingredientIds } },
                 attributes: ['ingredient_id']
             });
@@ -257,23 +257,17 @@ const Ingredient = {
     },
     findIngredients: async (req, res) => {
         try {
-            const { query } = req.query;
-            if (query === "") {
-                const allIngredients = await models.Ingredient.findAll();
-                return res.status(200).json({ message: `Tìm thấy ${allIngredients.length} nguyên liệu`, data: allIngredients });
-            }
+            const { id, name, unit } = req.query;
+            const whereClause = {};
+
+            if (id) whereClause.id = { [Op.like]: `%${id}%` };
+            if (name) whereClause.name = { [Op.like]: `%${name}%` };
+            if (unit) whereClause.unit = { [Op.like]: `%${unit}%` };
+
             const foundIngredients = await models.Ingredient.findAll({
-                where: {
-                    [Op.or]: [
-                        { id: { [Op.like]: `%${query}%` } },
-                        { name: { [Op.like]: `%${query}%` } },
-                        { unit: { [Op.like]: `%${query}%` } },
-                    ]
-                }
+                where: whereClause
             });
-            if (foundIngredients.length === 0)
-                return res.status(404).json({ message: "Không tìm thấy nguyên liệu nào" });
-            return res.status(200).json({ message: `Đã tìm thấy ${foundIngredients.length} nguyên liệu`, foundIngredients });
+            return res.status(200).json({ foundIngredients });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi thực hiện tìm nguyên liệu" });

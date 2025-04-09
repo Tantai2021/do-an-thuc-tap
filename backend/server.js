@@ -3,18 +3,16 @@ require('dotenv').config();
 const express = require('express');
 const sequelize = require('./src/db/database'); // Kết nối với cơ sở dữ liệu
 const Router = require('./src/routes/index');
-const multer = require('multer');
 const cors = require('cors');
 const app = express();
+const path = require("path");
 const port = process.env.PORT || 6000;
 
 // Middleware để xử lý dữ liệu
-app.use(express.json());
 app.use(cors());
-// Khởi tạo multer để xử lý form-data
-const upload = multer();
-// Cấu hình multer trước khi xử lý API
-app.use(upload.none());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 // Sử dụng các API routes
 Router(app);
 

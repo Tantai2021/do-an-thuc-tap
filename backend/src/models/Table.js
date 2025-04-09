@@ -7,7 +7,15 @@ const Table = sequelize.define('tables', {
         primaryKey: true,
         autoIncrement: true
     },
-    table_number: {
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    capacity: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    area_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -15,6 +23,11 @@ const Table = sequelize.define('tables', {
         type: DataTypes.ENUM("Available", "Occupied", "Reserved"),
         allowNull: false,
         defaultValue: "Available"
+    },
+    is_deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     }
-});
+}, { timestamps: true });
 module.exports = Table;
