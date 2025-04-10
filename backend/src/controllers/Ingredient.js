@@ -36,41 +36,34 @@ const Ingredient = {
             return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu", error });
         }
     },
-    getIngredientDeleted: async (req, res) => {
+    getIngredientsDeleted: async (req, res) => {
         try {
             let { page } = req.query;
-
-            // Chuyển đổi thành số nguyên và đặt giá trị mặc định nếu không có
             page = parseInt(page) || 1;
             limit = 7;
             const offset = (page - 1) * limit;
 
-            // Đếm tổng số nguyên liệu đã xóa
-            const totalDeletedIngredients = await models.Ingredient.count({
+            // Lấy tổng số nguyên liệu để tính tổng số trang
+            const totalIngredients = await models.Ingredient.count({
                 where: { is_deleted: true }
             });
 
-            // Lấy danh sách nguyên liệu đã xóa với phân trang
             const ingredients = await models.Ingredient.findAll({
                 where: { is_deleted: true },
                 limit: limit,
                 offset: offset,
             });
 
-            if (ingredients.length === 0) {
-                return res.status(404).json({ message: "Không có nguyên liệu đã xóa" });
-            }
-
             return res.status(200).json({
-                totalItems: totalDeletedIngredients,
-                totalPages: Math.ceil(totalDeletedIngredients / limit),
+                totalItems: totalIngredients,
+                totalPages: Math.ceil(totalIngredients / limit),
                 currentPage: page,
                 data: ingredients
             });
 
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu đã xóa", error });
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách nguyên liệu", error });
         }
     },
 
@@ -175,11 +168,10 @@ const Ingredient = {
             });
             if (!existIngredient)
                 return res.status(404).json({ message: "Không tìm thấy nguyên liệu cần khôi phục" });
-            const restoredIngredient = await existIngredient.update({
+            await existIngredient.update({
                 is_deleted: false
             })
-            if (restoredIngredient) return res.status(200).json({ message: "Đã khôi phục nguyên liệu" });
-            else return res.status(400).json({ message: "Đã xảy ra lỗi" });
+            return res.status(200).json({ message: "Đã khôi phục nguyên liệu" });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi khôi phục nguyên liệu" });
@@ -188,7 +180,6 @@ const Ingredient = {
     restoreIngredients: async (req, res) => {
         try {
             const { ingredientIds } = req.body;
-            console.log(ingredientIds);
 
             if (Array.isArray(ingredientIds) && ingredientIds.length === 0)
                 return res.status(404).json({ message: "Danh sách nguyên liệu cần khôi phục không hợp lệ" });
@@ -206,10 +197,8 @@ const Ingredient = {
                 { is_deleted: false },
                 { where: { id: { [Op.in]: ingredientIds } } }
             );
-            const ingredients = await models.Ingredient.findAll(
-                { where: { is_deleted: true } }
-            );
-            return res.status(200).json({ message: `Đã khôi phục ${existIngredients.length} nguyên liệu`, ingredients });
+
+            return res.status(200).json({ message: `Đã khôi phục ${existIngredients.length} nguyên liệu` });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi khôi phục nhiều nguyên liệu" });

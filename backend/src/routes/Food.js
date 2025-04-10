@@ -12,10 +12,14 @@ router.get('/deleted', FoodController.getFoodsDeleted); // Lấy tất cả món
 router.get('/search', FoodController.findFoods); // Tìm kiếm món ăn
 router.get('/search/deleted', FoodController.findFoodsDeleted); // Tìm kiếm món ăn
 router.get('/:id', FoodController.getFoodByid); // Tìm món ăn theo id
+
 router.post('/', Authorize(["admin"]), FoodController.addFood); // Thêm một món ăn mới
+
 router.delete('/bulk-delete', FoodController.deleteFoods); // Xóa mềm nhiều món ăn
 router.delete('/:id', FoodController.deleteFood); // Xóa mềm một món ăn
+
 router.put('/:id', Authorize(["admin"]), FoodController.updateFood); // Cập nhật một món ăn
+
 router.patch('/restore/bulk-restore', FoodController.restoreFoods); // Khôi phục món ăn đã bị xóa mềm
 router.patch('/restore/:id', FoodController.restoreFood); // Khôi phục món ăn đã bị xóa mềm
 

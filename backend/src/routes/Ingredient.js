@@ -8,7 +8,7 @@ const IngredientController = require('../controllers/Ingredient');
 
 router.use(Authenticate, Authorize(["admin"]));
 router.get('/', IngredientController.getIngredients); // Lấy tất cả nguyên liệu 
-router.get('/deleted', IngredientController.getIngredientDeleted); // Lấy tất cả nguyên liệu đã bị soft deleted
+router.get('/deleted', IngredientController.getIngredientsDeleted); // Lấy tất cả nguyên liệu đã bị soft deleted
 router.get('/search', IngredientController.findIngredients); // Tìm kiếm nguyên liệu
 router.get('/:id', IngredientController.getIngredientById); // Tìm nguyên liệu theo id
 
