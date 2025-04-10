@@ -35,26 +35,24 @@ const Recipe = {
     // 3️⃣ Tạo công thức mới
     createRecipe: async (req, res) => {
         try {
-            const { foodId, ingredients } = req.body;
+            const { foodId, ingredientId, quantity } = req.body;
 
-            if (!foodId || !ingredients || ingredients.length === 0)
+            if (!foodId || !ingredientId || !quantity)
                 return res.status(400).json({ message: "Thiếu thông tin công thức" });
 
             const existFood = await models.Food.findOne({ where: { id: foodId } });
             if (!existFood) return res.status(404).json({ message: "Không tìm thấy món ăn" });
 
-            // Thêm nguyên liệu vào công thức (nếu có)
-            const recipeIngredients = ingredients.map(({ ingredient_id, quantity }) => ({
+            await models.Recipe.create({
                 food_id: foodId,
-                ingredient_id: ingredient_id,
-                quantity: quantity || 1 // Nếu không có quantity, mặc định là 1
-            }));
-            await models.Recipe.bulkCreate(recipeIngredients);
+                ingredient_id: ingredientId,
+                quantity: quantity
+            });
 
-            res.status(201).json({ message: "Thêm công thức thành công", data: recipeIngredients });
+            return res.status(201).json({ message: "Thêm công thức thành công", data: recipeIngredients });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "Lỗi khi tạo công thức mới" });
+            return res.status(500).json({ message: "Lỗi khi tạo công thức mới" });
         }
     },
 

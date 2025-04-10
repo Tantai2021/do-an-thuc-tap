@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const RecipeController = require("../controllers/Recipe");
+const Authenticate = require("../middleware/Authenticate");
+const Authorize = require("../middleware/Authorize");
 
+router.use(Authenticate, Authorize(["admin"]));
 // Lấy danh sách tất cả công thức
 router.get('/:foodId', RecipeController.getRecipesOfFood);
 
