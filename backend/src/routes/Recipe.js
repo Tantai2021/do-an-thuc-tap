@@ -10,6 +10,7 @@ router.get('/:foodId', RecipeController.getRecipesOfFood);
 
 // Thêm một công thức mới
 router.post('/', RecipeController.createRecipe);
+router.post('/bulk-create', RecipeController.createRecipes);
 
 // Cập nhật một công thức theo ID
 router.put('/:foodId', RecipeController.updateRecipe);

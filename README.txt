@@ -1,67 +1,190 @@
 * Quy ước đặt tên biến theo Camelcase
 * Quy ước đặt tên file viết hoa chữ cái đầu
-* Trả về mã 404 khi không tìm thấy
-* Trả về mã 400 khi có lỗi thực thi
-* Trả về mã 200 khi thực thi thành công
-* Trả về mã 500 khi lỗi server
 * Chức năng phân trang cho những api trả về danh sách
-* CRUD: get, add, update, delete
+
+------ Danh sách endpoint -------
+1. Nguyên liệu 
+    - /api/ingredients
+2. Món ăn
+    - /api/foods
+3. Bộ thành phẩm (công thức món)
+    - /api/recipes
+4. Chổ ngổi
+    - /api/tables
+5. Danh mục món
+    - /api/categories
+
 ---- Công việc hoàn thành -----
 - API Ingredients: 
-    + GET /api/ingredients/
-        -> Lấy tất cả nguyên liệu (chưa bị xóa mềm)
-    + GET /api/ingredients/deleted
-        -> Lấy tất cả nguyên liệu (đã bị xóa mềm)
+    + GET /api/ingredients?page=?&limit=?
+        -> Lấy tất cả nguyên liệu (chưa bị xóa mềm), có thực hiện phân trang
+        - Response: {
+                totalItems: totalIngredients, // Tổng số nguyên liệu
+                totalPages: Math.ceil(totalIngredients / limit), // Tổng số trang
+                currentPage: page, // Trang hiện tại
+                data: ingredients // danh sách lấy được
+            }
+    + GET /api/ingredients/deleted?page=?&limit=?
+        -> Lấy tất cả nguyên liệu (đã bị xóa mềm), có thực hiện phân trang
+        - Response: {
+                totalItems: totalIngredients, // Tổng số nguyên liệu
+                totalPages: Math.ceil(totalIngredients / limit), // Tổng số trang
+                currentPage: page, // Trang hiện tại
+                data: ingredients // danh sách lấy được
+            }
     + GET /api/ingredients/search
-        -> Tìm kiếm theo id,
-        -> Tìm kiếm gần đúng theo name
-        -> Tìm kiếm theo unit
+        - Query: 
+            + Mã nguyên liệu: ?id=?
+            + Tên nguyên liệu: ?name=?
+            + Đơn vị tính: ?unit=?
+        - Response: {
+                data: rows, // Danh sách nguyên liệu tìm được
+                currentPage: parseInt(page), // Trang hiện tại
+                totalPages: Math.ceil(count / limit), // Tổng số trang
+                totalItems: count, // Tổng số nguyên liệu
+            }
     + GET /api/ingredients/:id
-        -> Tìm nguyên liệu theo id
+        - Response: {
+            id:
+            name:
+            unit:
+            quantity:
+            is_deleted: false
+        }
     + POST /api/ingredients/
         -> Thêm nguyên liệu mới (có kiểm tra trùng tên)
+        - Request: {name, unit}
+        - Response: { 
+            message: "Đã thêm nguyên liệu mới",
+            newIngredient: newIngredient 
+        }
     + PUT /api/ingredients/:id
         -> Cập nhật nguyên liệu (có kiểm tra trùng tên với các nguyên liệu khác)
+        - Request: {name, unit}
+        - Response: { 
+            message: "Đã thêm nguyên liệu mới",
+            newIngredient: newIngredient 
+        }
     + DELETE /api/ingredients/:id
         -> Xóa mềm một nguyên liệu (có kiểm tra nguyên liệu đang được sử dụng)
+        - Response: { message: "Đã xóa nguyên liệu này" }
     + DELETE /api/ingredients/bulk-delete
         -> Xóa mềm nhiều nguyên liệu (có kiểm tra những nguyên liệu đang được sử dụng)
+        - Request: { ingredientIds } // Danh sách mã nguyên liệu 
+        - Response: {
+            message: `Đã xóa {2} nguyên liệu`,
+            deletedIngredientIds: unUsedIngredientIds, // Danh sách mã nguyên liệu đã xóa thành công
+            usedIngredientIds // Danh sách mã nguyên liệu đang được sử dụng
+        }
     + PATCH /api/ingredients/restore/:id
         -> Khôi phục nguyên liệu
+        - Response: { message: "Đã khôi phục nguyên liệu" }
     + PATCH /api/ingredients/restore/bulk-restore
         -> Khôi phục nhiều nguyên liệu nguyên liệu
+        - Request: { ingredientIds } 
+        - Response: { message: `Đã khôi phục ${4} nguyên liệu` }
+
 - API Foods:
-    + GET /api/foods/
-        -> Lấy tất cả món ăn (chưa bị xóa mềm)
+    + GET /api/foods?page=?$limit=?
+        -> Lấy tất cả món ăn (chưa bị xóa mềm), có thực hiện phân trang
+        - Response: {
+                data: foods, // Danh sách món ăn 
+                currentPage: page, // Trang hiện tại
+                totalPages: Math.ceil(count / limit), // Tổng số trang
+                totalItems: count, // Tổng số món
+            }
     + GET /api/foods/deleted
-        -> Lấy tất cả món ăn (đã bị xóa mềm)
+        -> Lấy tất cả món ăn (đã bị xóa mềm), có thực hiện phân trang
+         - Response: {
+                data: foods, // Danh sách món ăn 
+                currentPage: page, // Trang hiện tại
+                totalPages: Math.ceil(count / limit), // Tổng số trang
+                totalItems: count, // Tổng số món
+            }
     + GET /api/foods/:id
-        -> Tìm món ăn theo id
-    + GET /api/foods/search
-        -> Tìm kiếm theo id
-        -> Tìm kiếm gần đúng theo tên
-        -> Tìm kiếm theo < min, > max, >min và <max
+        - Response: { message: "Đã tìm thấy.", data: existFood }
+
+    + GET /api/foods/search?page=?&limit=
+        -> Lọc những món chưa bị xóa mềm
+        - Query: 
+            + Mã món: ?foodId=?
+            + Tên món: ?name=?
+            + Danh mục: ?category_id=?
+            + Giá thấp nhất: ?minPrice=?
+            + Giá cao nhất: ?maxPrice=?
+        - Response: {
+                data: rows, // Danh sách món ăn
+                currentPage: parseInt(page), // Trang hiện tại
+                totalPages: Math.ceil(count / limit), // Tổng số trang
+                totalItems: count // Tổng số món
+            }
     + POST /api/foods/
         -> Thêm một món ăn mới (có kiểm tra trùng tên)
+        - Request: { name, category_id, image, price, description } 
+        - Response: { message: "Thêm món ăn mới thành công" }
     + DELETE /api/foods/:id
         -> Xóa mềm một món ăn (có kiểm tra món đang được sử dụng trong OrderDetail)
+        - Response: { message: "Đã ẩn một món ăn" }
     + DELETE /api/foods/bulk-delete
         -> Xóa mềm nhiều món ăn (có kiểm tra các món đang sử dụng không thể xóa)
+        - Request: { foodIds } 
+        - Response: {
+                    message: `Đã ẩn ${3} món ăn`,
+                    usedFoodIds, // Danh sách mã món đang sử dụng
+                    unUsedFoodIds // Danh sách mã món không sử dụng
+                }
     + PUT /api/foods/:id 
         -> Cập nhật một món ăn (có kiểm tra trùng tên)
+        - Request: { name, category_id, price, description, image }
+        - Response: { message: "Cập nhật món ăn thành công!" }
     + PATCH /api/foods/restore/:id
         -> Khôi phục món ăn đã bị xóa mềm
+        - Response: { message: "Khôi phục món ăn thành công" }
+    + PATCH /api/foods/restore/bulk-restore
+        -> Khôi phục nhiều món ăn bị xóa mềm
+        - Request: { foodIds }
+        - Response: {message: `Đã mở khóa ${updatedFoods[0]} món ăn`,}
+    
+- API Recipes:
+    + GET /api/recipes/:foodId
+        -> Tìm kiếm danh sách nguyên liệu của 1 món ăn cụ thể
+        - Response: { data: recipes } // Danh sách những nguyên liệu đang được sử dụng trong món đó
+    + POST /api/recipes/
+        -> Thêm cùng lúc nhiều nguyên liệu vào 1 món ăn
+        - Request: { formRecipes: [{ ingredient_id, quantity, food_id }] }
+        - Response: { message: "Thêm công thức thành công" }
+        
 - API Auth
     + POST /api/auth/login
-        -> Tìm kiếm user theo email để đăng nhập
-    + POST /api/auth/register
-        -> Tạo một user mới (có kiểm tra trùng email và mã hóa mật khẩu bằng bcrypt)
-    + PUT /api/auth
-        -> Cập nhật thông tin user (có kiểm tra trùng email và mã hóa mật khẩu bằng bcrypt);
+        - Request: { username, password }
+        - Response: {
+                message: "Đăng nhập thành công",
+                user: payload,
+                token: userToken
+            }
+
 
 ****** FRONTEND ****
-- Auth
-    + Đăng nhập người dùng (hiển thị toast)
-- Ingredients
-    + Hiển thị danh sách nguyên liệu
-    + Xóa nguyên liệu có ràng buộc (không được sử dụng trong món)
+1. Những hoàn thành
+- Gửi header token bảo mật dữ liệu phía backend
+- Đăng nhập và phân quyền (hiển thị thông báo), 
+- Quản lý nguyên liệu:
+    + Hiển thị danh sách nguyên liệu chưa bị xóa mềm và đã bị xóa mềm
+    + Thêm 1 nguyên liệu mới, thông báo khi thêm thành công
+    + Cập nhật thông tin 1 nguyên liệu, thông báo khi cập nhật thành công
+    + Xóa 1 nguyên liệu và xóa cùng lúc nhiều nguyên liệu, có hiển thị xác nhận trước khi xóa, thông báo khi xóa thành công
+    + Lọc nguyên liệu theo các tiêu chí mã, tên nguyên liệu 
+    + Khôi phục 1 nguyên liệu và cùng lúc nhiều nguyên liệu, thông báo khi khôi phục thành công
+- Quản lý món ăn:
+    + Hiển thị danh sách món ăn chưa bị xóa mềm và đã bị xóa mềm
+    + Thêm 1 nguyên liệu mới, có xử lý hình ảnh, có validate dữ liệu, thông báo khi thêm thành công
+    + Cập nhật thông tin 1 nguyên liệu, có validate dữ liệu, thông báo khi cập nhật thành công
+    + Xóa mềm 1 nguyên liệu và cùng lúc nhiều nguyên liệu, có xác nhận trước khi xóa, thông báo khi xóa thành công
+    + Lọc món ăn theo các tiêu chí mã, tên, giá cả, danh mục những món chưa bị xóa mềm và đã bị xóa mềm
+    + Xem bộ thành phẩm (công thức món) của 1 món ăn
+    + Khôi phục 1 nguyên liệu và cùng lúc nhiều nguyên liệu đã bị xóa mềm, thông báo khi khôi phục thành công
+    + Sắp xếp món ăn theo giá tăng dần và giảm dần
+- Quản lý bộ thành phẩm (công thức món ăn):
+    + Hiển thị danh sách món ăn đang được sử dụng
+    + Hiển thị danh sách nguyên liệu được sử dụng của 1 món ăn cụ thể
+    + Thêm cùng lúc nhiều nguyên liệu vào bộ thành phẩm, có validate dữ liệu, chỉ sử dụng những nguyên liệu chưa bị xóa mềm

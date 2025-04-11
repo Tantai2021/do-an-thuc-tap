@@ -4,9 +4,8 @@ const models = require('../models/index');
 const Ingredient = {
     getIngredients: async (req, res) => {
         try {
-            let { page } = req.query;
+            let { page, limit = 7 } = req.query;
             page = parseInt(page) || 1;
-            limit = 7;
             const offset = (page - 1) * limit;
 
             // Lấy tổng số nguyên liệu để tính tổng số trang
@@ -38,9 +37,8 @@ const Ingredient = {
     },
     getIngredientsDeleted: async (req, res) => {
         try {
-            let { page } = req.query;
+            let { page, limit = 7 } = req.query;
             page = parseInt(page) || 1;
-            limit = 7;
             const offset = (page - 1) * limit;
 
             // Lấy tổng số nguyên liệu để tính tổng số trang
@@ -207,7 +205,6 @@ const Ingredient = {
     deleteIngredients: async (req, res) => {
         try {
             const { ingredientIds } = req.body;
-            console.log(ingredientIds);
 
             if (!ingredientIds || !Array.isArray(ingredientIds) || ingredientIds.length === 0)
                 return res.status(404).json({ message: "Danh sách nguyên liệu không hợp lệ" });

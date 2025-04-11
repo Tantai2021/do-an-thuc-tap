@@ -28,12 +28,10 @@ const Food = {
             }
 
             return res.status(200).json({
-                message: "Danh sách món ăn",
                 data: foods,
                 currentPage: page,
                 totalPages: Math.ceil(count / limit),
                 totalItems: count,
-                pageSize: limit
             });
         } catch (error) {
             console.error(error);
@@ -81,12 +79,10 @@ const Food = {
             }
 
             return res.status(200).json({
-                message: "Danh sách món ăn",
                 data: foods,
                 currentPage: page,
                 totalPages: Math.ceil(count / limit),
                 totalItems: count,
-                pageSize: limit
             });
         } catch (error) {
             console.error(error);

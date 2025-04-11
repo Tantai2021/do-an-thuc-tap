@@ -24,7 +24,7 @@ const User = {
                 role: existUser.role
             };
 
-            const userToken = jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: "1h" });
+            const userToken = jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: "1d" });
             return res.status(200).json({
                 message: "Đăng nhập thành công",
                 user: payload,
