@@ -361,35 +361,53 @@ const Food = {
     },
     getFoodAvailable: async (req, res) => {
         try {
-            const foods = await models.Food.findAll({
+            const { count, rows: foods } = await models.Food.findAndCountAll({
                 where: { is_deleted: false },
-                include: [
-                    {
-                        model: models.Recipe,
-                        include: {
-                            model: models.Ingredient,
-                            attributes: ["id", "name", "quantity"]
-                        }
-                    }
-                ]
-            });
-            console.log(foods);
-            const availableFoods = foods.map(food => {
-                let minPossible = Infinity;
-                food.FoodIngredients.forEach(ingredient => {
-                    if (ingredient.Ingredient) {
-                        const possible = Math.floor(ingredient.Ingredient.stock / ingredient.quantity);
-                        minPossible = Math.min(minPossible, possible);
-                    }
-                });
-                return {
-                    id: food.id,
-                    name: food.name,
-                    maxAvailable: minPossible === Infinity ? 0 : minPossible
-                };
+                include: {
+                    model: models.Category,
+                    attributes: ["name"]
+                },
             });
 
-            return res.status(200).json({ message: "Số lượng món có thể chế biến", availableFoods });
+            const foodsAvailable = [];
+
+            // Sử dụng for...of để xử lý bất đồng bộ
+            for (let food of foods) {
+                const recipes = await models.Recipe.findAll({
+                    where: { food_id: food.id },
+                    include: [
+                        {
+                            model: models.Ingredient,
+                            as: "ingredient",
+                            attributes: ['id', 'name', 'quantity']
+                        }
+                    ]
+                });
+
+                let minPortions = Number.MAX_SAFE_INTEGER;
+
+                for (let recipe of recipes) {
+                    const ingredient = recipe.ingredient;
+                    const availableQuantity = ingredient.quantity;
+                    const requiredQuantity = recipe.quantity;
+
+                    // Tính số phần món ăn có thể chế biến dựa trên nguyên liệu
+                    const availablePortions = Math.floor(availableQuantity / requiredQuantity);
+
+                    // Chọn số phần nhỏ nhất từ các nguyên liệu
+                    minPortions = Math.min(minPortions, availablePortions);
+                }
+
+                // Đưa thông tin món ăn và số phần có thể chế biến vào danh sách
+                foodsAvailable.push({
+                    food: food,
+                    available: minPortions
+                });
+            }
+
+            // Trả về danh sách món ăn và số phần có thể chế biến
+            return res.status(200).json(foodsAvailable);
+
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi tính số lượng món có thể chế biến" });
