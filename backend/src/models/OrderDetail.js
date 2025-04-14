@@ -3,6 +3,12 @@ const sequelize = require('../db/database');
 const Order = require('../models/Order');
 const Food = require('./Food');
 const OrderDetail = sequelize.define('order_details', {
+    order_detail_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true
+    },
     order_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -29,7 +35,10 @@ const OrderDetail = sequelize.define('order_details', {
         type: DataTypes.DECIMAL,
         allowNull: false
     }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+
+});
 OrderDetail.belongsTo(Order, { foreignKey: 'order_id' });
 OrderDetail.belongsTo(Food, { foreignKey: 'food_id' });
 Order.hasMany(OrderDetail, { foreignKey: 'order_id' });

@@ -5,10 +5,10 @@ const Table = {
     getTables: async (req, res) => {
         try {
             const tables = await models.Table.findAll();
-            res.status(200).json(tables);
+            return res.status(200).json(tables);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "Lỗi khi lấy danh sách bàn ăn" });
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách bàn ăn" });
         }
     },
     getTablesByArea: async (req, res) => {

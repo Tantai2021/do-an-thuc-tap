@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const TableController = require('../controllers/Table');
+const Authenticate = require("../middleware/Authenticate");
+const Authorize = require("../middleware/Authorize");
 
 // Lấy danh sách tất cả bàn ăn
 router.get('/', TableController.getTables);

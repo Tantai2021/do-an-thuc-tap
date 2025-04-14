@@ -4,6 +4,10 @@ const AuthRoutes = require('./Auth');
 const RecipeRoutes = require('./Recipe');
 const TableRoutes = require('./Table');
 const CategoryRoutes = require('./Category');
+const AreaRoutes = require('./Area');
+const CustomerRoutes = require('./Customer');
+const OrderRoutes = require('./Order');
+const OrderDetailRoutes = require('./OrderDetail');
 const UploadRoutes = require("./Upload");
 
 const Router = (app) => {
@@ -13,6 +17,10 @@ const Router = (app) => {
     app.use('/api/recipes', RecipeRoutes);
     app.use('/api/tables', TableRoutes);
     app.use('/api/categories', CategoryRoutes);
+    app.use('/api/customer', CustomerRoutes);
+    app.use('/api/areas', AreaRoutes);
+    app.use('/api/orders', OrderRoutes);
+    app.use('/api/order-details', OrderDetailRoutes);
 
     app.use("/api/uploads", UploadRoutes);
 
