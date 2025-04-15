@@ -50,12 +50,12 @@ const Order = sequelize.define('orders', {
         defaultValue: "Pending"
     },
     start_time: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         defaultValue: Sequelize.NOW,
         allowNull: false
     },
     end_time: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         defaultValue: Sequelize.NOW,
         allowNull: false
     },
@@ -66,7 +66,13 @@ const Order = sequelize.define('orders', {
             if (!order.id) {
                 order.id = Math.random().toString(36).substring(2, 8).toUpperCase();
             }
-        }
+            if (!order.start_time) {
+                order.start_time = new Date();
+            }
+            const durationInHours = 1;
+            order.end_time = new Date(order.start_time.getTime() + durationInHours * 60 * 60 * 1000);
+        },
+
     }
 });
 

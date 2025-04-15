@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db/database');
-const Staff = sequelize.define('areas', {
+const Staff = sequelize.define('staffs', {
     id: {
         type: DataTypes.STRING,
         allowNull: false,

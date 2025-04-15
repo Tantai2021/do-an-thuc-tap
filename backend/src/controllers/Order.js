@@ -21,7 +21,10 @@ const Order = {
                 table_id: table_id,
                 number_of_guests: number_of_guests,
             })
-            req.io.emit("order-created", createdOrder);
+            if (createdOrder) {
+                await models.Table.update({ status: 'Occupied' }, { where: { id: table_id } });
+                req.io.emit("order-created", createdOrder);
+            }
 
             return res.status(200).json({ message: "Tạo đơn hàng thành công", data: createdOrder });
         } catch (error) {
@@ -38,8 +41,39 @@ const Order = {
             console.error(error);
             return res.status(500).json({ message: "Lỗi server", error });
         }
-    }
+    },
+    getOrderByTable: async (req, res) => {
+        try {
+            const { tableId, orderStatus } = req.query;
 
+            const order = await models.Order.findOne({ where: { table_id: tableId, status: orderStatus } });
+            return res.status(200).json({ data: order ?? null });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: 'Lỗi server', error });
+        }
+    },
+    getOrderById: async (req, res) => {
+        try {
+            const { orderId } = req.params;
+
+            if (!orderId)
+                return res.status(400).json({ message: "Vui lòng cung cấp mã đơn hàng" });
+            const order = await models.Order.findOne({
+                where: { id: orderId },
+                include: [
+                    { model: models.Customer },
+                    { model: models.Staff },
+                    { model: models.Table },
+                ]
+            })
+
+            return res.status(200).json({ data: order })
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server", error });
+        }
+    }
 };
 
 module.exports = Order;

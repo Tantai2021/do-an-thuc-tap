@@ -34,13 +34,20 @@ const OrderDetail = sequelize.define('order_details', {
     sub_total: {
         type: DataTypes.DECIMAL,
         allowNull: false
+    },
+    status: {
+        type: DataTypes.ENUM('Pending', 'Served', 'Cancelled'),
+        allowNull: false,
+        defaultValue: 'Pending'
     }
 }, {
     timestamps: true,
 
 });
+
 OrderDetail.belongsTo(Order, { foreignKey: 'order_id' });
 OrderDetail.belongsTo(Food, { foreignKey: 'food_id' });
+
 Order.hasMany(OrderDetail, { foreignKey: 'order_id' });
 Food.hasMany(OrderDetail, { foreignKey: 'food_id' });
 
