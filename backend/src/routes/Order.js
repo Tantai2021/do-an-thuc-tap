@@ -8,5 +8,6 @@ router.get("/", Authenticate, Authorize(['admin']), OrderController.getOrdersByS
 router.get("/table", OrderController.getOrderByTable);
 router.get("/:orderId", Authenticate, Authorize(['admin']), OrderController.getOrderById);
 router.post("/", OrderController.createOrder);
+router.delete('/:orderId', OrderController.deleteOrderById);
 
 module.exports = router;

@@ -73,6 +73,27 @@ const Order = {
             console.error(error);
             return res.status(500).json({ message: "Lỗi server", error });
         }
+    },
+    deleteOrderById: async (req, res) => {
+        try {
+            const { orderId } = req.params;
+            if (!orderId)
+                return res.status(400).json({ message: "Vui lòng cung cấp mã đơn hàng" });
+            const order = await models.Order.findByPk(orderId);
+            if (!order)
+                return res.status(404).json({ message: "Không tìm thấy đơn hàng " });
+
+            const orderDetail = await models.OrderDetail.findAll({ where: { order_id: order.id } })
+            if (orderDetail.length > 0)
+                return res.status(401).json({ message: "Chi tiết đơn hàng đã được tạo, liên hệ admin để hủy đơn" });
+            const orderCancelled = await models.Order.update({ status: "Cancelled" }, { where: { id: order.id } });
+            if (orderCancelled?.length > 0)
+                await models.Table.update({ status: 'Available' }, { where: { id: order.table_id } })
+            return res.status(200).json({ message: "Hủy đơn hàng thành công!" });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server", error });
+        }
     }
 };
 
