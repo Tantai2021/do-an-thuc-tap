@@ -3,6 +3,8 @@
 * Chức năng phân trang cho những api trả về danh sách
 
 ------ Danh sách endpoint -------
+0. Xác thực 
+    - /api/auth
 1. Nguyên liệu 
     - /api/ingredients
 2. Món ăn
@@ -13,6 +15,18 @@
     - /api/tables
 5. Danh mục món
     - /api/categories
+6. Khách hàng
+    - /api/customer
+7. Khu vực chổ ngồi
+    - /api/areas
+8. Nhân viên
+    - /api/staffs
+9. Đơn hàng
+    - /api/orders
+10. Chi tiết đơn hàng
+    - /api/order-details
+11. Upload file hình ảnh
+    - /api/uploads
 
 ---- Công việc hoàn thành -----
 - API Ingredients: 
@@ -154,6 +168,41 @@
         - Request: { formRecipes: [{ ingredient_id, quantity, food_id }] }
         - Response: { message: "Thêm công thức thành công" }
         
+- API Orders:
+    + GET /api/orders/status
+        -> Lấy danh sách đơn hàng theo trạng thái (pending, completed, cancelled)
+        - Query: ?status=
+        - Response: { data: orders } // Danh sách đơn hàng
+    + GET /api/orders/table
+        -> Lấy danh sách đơn hàng theo bàn và trạng thái đơn hàng
+    + GET /api/orders/search
+        -> Tìm kiếm đơn hàng theo các tiêu chí
+        - Query: {
+                order_id,
+                staff_id,
+                table_name,
+                customer_name,
+                start_date,
+                end_date,
+                status
+            }
+        - Response: { data: orders }
+    + GET /api/orders/:orderId
+        -> Tìm kiếm đơn hàng theo mã đơn hàng 
+        - Response: { data: order }
+    + POST /api/orders/
+        -> Tạo đơn hàng mới với trạng thái chờ (pending)
+        - Request: { table_id, number_of_guests, customer_phone, customer_name, staff_id }
+        - Response: { message: "Tạo đơn hàng thành công", data: createdOrder }
+    + DELETE /api/orders/:orderId
+        -> Hủy 1 đơn hàng theo mã đơn
+        - Response: { message: "Hủy đơn hàng thành công!" }
+- API Staff:
+    + GET /api/staffs/search:
+        -> Tìm kiếm nhân viên theo mã và tên
+        - Query: ?search=value
+        - Response: {staff} // Thông tin nhân viên
+
 - API Auth
     + POST /api/auth/login
         - Request: { username, password }
@@ -188,3 +237,9 @@
     + Hiển thị danh sách món ăn đang được sử dụng
     + Hiển thị danh sách nguyên liệu được sử dụng của 1 món ăn cụ thể
     + Thêm cùng lúc nhiều nguyên liệu vào bộ thành phẩm, có validate dữ liệu, chỉ sử dụng những nguyên liệu chưa bị xóa mềm
+- Quản lý don hang
+    + Lọc don hàng theo mã don, bàn, khách hàng, nhân viên mở bàn, ngày tạo don hàng
+2. Những chức năng cập nhật sau
+- Quản lý bộ thành phẩm:
+    + Cập nhật công thức
+- 

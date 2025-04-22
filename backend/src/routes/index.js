@@ -8,6 +8,7 @@ const AreaRoutes = require('./Area');
 const CustomerRoutes = require('./Customer');
 const OrderRoutes = require('./Order');
 const OrderDetailRoutes = require('./OrderDetail');
+const StaffRoutes = require('./Staff');
 const UploadRoutes = require("./Upload");
 
 const Router = (app) => {
@@ -19,6 +20,7 @@ const Router = (app) => {
     app.use('/api/categories', CategoryRoutes);
     app.use('/api/customer', CustomerRoutes);
     app.use('/api/areas', AreaRoutes);
+    app.use('/api/staffs', StaffRoutes);
     app.use('/api/orders', OrderRoutes);
     app.use('/api/order-details', OrderDetailRoutes);
 
