@@ -19,9 +19,9 @@ const Staff = sequelize.define('staffs', {
         allowNull: false
     },
     role: {
-        type: DataTypes.ENUM("Accounting", "Manager", "Chef", "Care"),
+        type: DataTypes.ENUM("accounting", "manager", "chef", "customer-service"),
         allowNull: false,
-        defaultValue: "Chef"
+        defaultValue: "chef"
     }
 }, { timestamps: true });
 module.exports = Staff;

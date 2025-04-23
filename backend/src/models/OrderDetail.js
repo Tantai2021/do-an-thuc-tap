@@ -36,13 +36,20 @@ const OrderDetail = sequelize.define('order_details', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('Pending', 'Served', 'Cancelled'),
+        type: DataTypes.ENUM('pending', 'prepared', 'served', 'cancelled'),
         allowNull: false,
-        defaultValue: 'Pending'
+        defaultValue: 'pending'
     }
 }, {
     timestamps: true,
-
+    hooks: {
+        beforeBulkCreate: (orderDetails) => {
+            return orderDetails.map(detail => ({
+                ...detail,
+                createdAt: new Date()
+            }))
+        }
+    }
 });
 
 OrderDetail.belongsTo(Order, { foreignKey: 'order_id' });

@@ -58,11 +58,39 @@ const OrderDetail = {
                 where: { order_id: orderId },
                 include: { model: models.Food, }
             });
-            console.log(orderDetails)
             return res.status(200).json({ data: orderDetails });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi server", error });
+        }
+    },
+    updateOrderDetailStatus: async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        // Các trạng thái hợp lệ
+        const validStatuses = ['pending', 'prepared', 'served', 'cancelled'];
+
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+        }
+
+        try {
+            const orderDetail = await models.OrderDetail.findByPk(id, {
+                include: { model: models.Food }
+            });
+
+            if (!orderDetail) {
+                return res.status(404).json({ error: 'Không tìm thấy món' });
+            }
+
+            await orderDetail.update({ status: status });
+
+            req.io.emit('order-details-updated', orderDetail);
+            return res.json({ message: 'Cập nhật trạng thái thành công', data: orderDetail });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Lỗi máy chủ' });
         }
     }
 

@@ -38,6 +38,7 @@ const Food = {
             return res.status(500).json({ message: "Lỗi khi lấy danh sách món" });
         }
     },
+    
     getFoodByid: async (req, res) => {
         try {
             const foodId = req.params.id;
