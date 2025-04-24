@@ -1,6 +1,15 @@
 const models = require('../models/index');
 const { Op } = require('sequelize');
 const Food = {
+    getAllFood: async (req, res) => {
+        try {
+            const foods = await models.Food.findAll();
+            return res.status(200).json({ data: foods });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách món" });
+        }
+    },
     getFoods: async (req, res) => {
         try {
             let { page, limit } = req.query;
@@ -38,7 +47,7 @@ const Food = {
             return res.status(500).json({ message: "Lỗi khi lấy danh sách món" });
         }
     },
-    
+
     getFoodByid: async (req, res) => {
         try {
             const foodId = req.params.id;

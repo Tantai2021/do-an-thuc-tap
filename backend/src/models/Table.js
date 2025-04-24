@@ -20,9 +20,9 @@ const Table = sequelize.define('tables', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM("Available", "Occupied", "Reserved"),
+        type: DataTypes.ENUM("available", "occupied", "reserved"),
         allowNull: false,
-        defaultValue: "Available"
+        defaultValue: "available"
     },
     is_deleted: {
         type: DataTypes.BOOLEAN,

@@ -13,7 +13,6 @@ const Order = {
                     { model: models.Customer },
                 ]
             });
-            console.log("ORDERS: ", orders);
             return res.status(200).json({ data: orders })
         } catch (error) {
             console.error(error);
@@ -24,7 +23,14 @@ const Order = {
         try {
             const { tableId, orderStatus } = req.query;
 
-            const order = await models.Order.findOne({ where: { table_id: tableId, status: orderStatus } });
+            const order = await models.Order.findOne({
+                where: {
+                    [Op.and]: [
+                        { table_id: tableId },
+                        { status: orderStatus }
+                    ]
+                }
+            });
             return res.status(200).json({ data: order ?? null });
         } catch (error) {
             console.error(error);
@@ -72,7 +78,7 @@ const Order = {
                 number_of_guests: number_of_guests,
             })
             if (createdOrder) {
-                await models.Table.update({ status: 'Occupied' }, { where: { id: table_id } });
+                await models.Table.update({ status: 'occupied' }, { where: { id: table_id } });
                 const newOrder = await models.Order.findOne({
                     where: { id: createdOrder.id },
                     include: [
@@ -110,10 +116,10 @@ const Order = {
                 return res.status(401).json({ message: "Chi tiết đơn hàng đã được tạo, liên hệ admin để hủy đơn" });
 
             await order.update({ status: "cancelled" });
-            await models.Table.update({ status: 'Available' }, { where: { id: order.table_id } })
-            
+            await models.Table.update({ status: 'available' }, { where: { id: order.table_id } })
+
             req.io.emit("order-cancelled", order);
-            
+
             return res.status(200).json({ message: "Hủy đơn hàng thành công!" });
         } catch (error) {
             console.error(error);
@@ -131,7 +137,6 @@ const Order = {
                 end_date,
                 status
             } = req.query;
-            console.log("QUERY: ", req.query);
             if (!order_id && !staff_id && !table_name && !customer_name && !start_date && !status) {
                 return res.status(400).json({ message: 'Vui lòng cung cấp ít nhất 1 tiêu chí tìm kiếm' });
             }

@@ -6,6 +6,7 @@ const Authorize = require("../middleware/Authorize");
 const FoodController = require('../controllers/Food');
 
 router.get('/', FoodController.getFoods); // Lấy tất cả món ăn chưa bị soft deleted
+router.get('/all', FoodController.getAllFood); // Lấy tất cả món ăn chưa bị soft deleted
 router.get('/available', FoodController.getFoodAvailable); // Lấy tất cả món ăn có thể chế biến
 router.get('/deleted', FoodController.getFoodsDeleted); // Lấy tất cả món ăn đã bị soft deleted
 router.get('/search', FoodController.findFoods); // Tìm kiếm món ăn

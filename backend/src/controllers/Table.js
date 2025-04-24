@@ -166,7 +166,7 @@ const Table = {
             const { tableId } = req.params;
             const { status } = req.body;
 
-            const validStatuses = ["Available", "Occupied"];
+            const validStatuses = ["available", "occupied"];
 
             // 1. Kiểm tra trạng thái hợp lệ
             if (!validStatuses.includes(status)) {
@@ -181,10 +181,10 @@ const Table = {
             if (table.is_deleted) {
                 return res.status(400).json({ message: "Bàn đã bị vô hiệu hóa, không thể cập nhật trạng thái" });
             }
-            // 5. Kiểm tra chuyển trạng thái "Occupied" -> "Available"
-            if (table.status === "Occupied" && status === "Available") {
+            // 5. Kiểm tra chuyển trạng thái "occupied" -> "available"
+            if (table.status === "occupied" && status === "available") {
                 const hasUnpaidOrders = await models.Order.count({
-                    where: { table_id: tableId, status: { [Op.not]: ["Completed", "Cancelled"] } }
+                    where: { table_id: tableId, status: { [Op.not]: ["completed", "cancelled"] } }
                 });
                 if (hasUnpaidOrders > 0) {
                     return res.status(400).json({ message: "Bàn có hóa đơn chưa thanh toán, không thể chuyển sang trạng thái Trống" });
