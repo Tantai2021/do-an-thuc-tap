@@ -239,7 +239,24 @@
     + Thêm cùng lúc nhiều nguyên liệu vào bộ thành phẩm, có validate dữ liệu, chỉ sử dụng những nguyên liệu chưa bị xóa mềm
 - Quản lý don hang
     + Lọc don hàng theo mã don, bàn, khách hàng, nhân viên mở bàn, ngày tạo don hàng
-2. Những chức năng cập nhật sau
+
+2. Những chức năng phát triển sau
 - Quản lý bộ thành phẩm:
     + Cập nhật công thức
-- 
+- Chi tiết đơn hàng: 
+    + Số lượng khách order
+    + Số lượng đã làm được
+    + Số lượng không làm được
+- Thanh toán:
+    + Tính số lượng món đã làm được
+
+3. Chức năng hoàn thành theo role
+- Chef: 
+    + Nhận đơn mới, cập nhật trạng thái đã chế biến xong
+    * Cần sắp xếp những đơn vào trước và sau
+- Customer-service:
+    + Cập nhật ẩn hiện món 
+    + Quản lý order theo bàn
+    + Hỗ trợ khách hàng gọi món
+    + Kiểm tra ra món, những món đang chế biên và đã chế biến
+    

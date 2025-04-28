@@ -1,6 +1,6 @@
 const models = require('../models/index');
 const { Op } = require('sequelize');
-
+const moment = require('moment-timezone');
 const OrderDetail = {
     createOrderDetails: async (req, res) => {
         try {
@@ -27,17 +27,31 @@ const OrderDetail = {
                 foodMap[food.id] = food;
             });
 
-            // Thêm thông tin món ăn vào từng orderDetail trước khi gửi socket
-            const withFoodInfo = orderDetails.map(detail => ({
-                ...detail,
-                food: foodMap[detail.food_id] || null,
-                status: 'Pending'
-            }));
+            // 1. Tạo orderDetails
+            const orderDetailsCreated = await models.OrderDetail.bulkCreate(orderDetails, { returning: true });
 
-            const orderDetailsCreated = await models.OrderDetail.bulkCreate(orderDetails);
+            // 2. Lấy ra IDs vừa tạo
+            const ids = orderDetailsCreated.map(item => item.order_detail_id);
+
+            // 3. Query lại với include
+            const fullOrderDetails = await models.OrderDetail.findAll({
+                where: {
+                    order_detail_id: { [Op.in]: ids } // hoặc order_detail_id nếu model của bạn đặt như vậy
+                },
+                include: [
+                    {
+                        model: models.Order,
+                        include: [
+                            { model: models.Table } // Chỉ lấy tableNumber từ model Table
+                        ]
+                    },
+                    { model: models.Food }
+                ]
+            });
+
 
             if (orderDetailsCreated) {
-                req.io.emit("order-details-created", withFoodInfo)
+                req.io.emit("order-details-created", fullOrderDetails)
             }
 
             return res.status(201).json({ message: "Đã thực hiện" });
@@ -67,6 +81,7 @@ const OrderDetail = {
     updateOrderDetailStatus: async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
+        console.log(id);
 
         // Các trạng thái hợp lệ
         const validStatuses = ['pending', 'prepared', 'served', 'cancelled'];
@@ -77,7 +92,10 @@ const OrderDetail = {
 
         try {
             const orderDetail = await models.OrderDetail.findByPk(id, {
-                include: { model: models.Food }
+                include: [
+                    { model: models.Food },
+                    { model: models.Order, include: [{ model: models.Table }] } // Lấy thông tin bàn từ Order
+                ]
             });
 
             if (!orderDetail) {
@@ -92,7 +110,45 @@ const OrderDetail = {
             console.error(error);
             return res.status(500).json({ error: 'Lỗi máy chủ' });
         }
-    }
+    },
+
+    getTodayChefOrders: async (req, res) => {
+        try {
+            const { status } = req.query;
+            console.log(status);
+
+            const timeZone = 'Asia/Ho_Chi_Minh';
+
+            // Lấy ngày hiện tại theo múi giờ
+            const today = moment().tz(timeZone);
+
+            // Tính startOfDay và endOfDay dựa trên múi giờ
+            const startOfDay = today.clone().startOf('day').toDate(); // 00:00:00
+            const endOfDay = today.clone().endOf('day').toDate(); // 23:59:59
+
+            const orders = await models.Order.findAll({
+                where: {
+                    start_time: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    },
+                    status: 'pending'
+                },
+                include: [
+                    {
+                        model: models.OrderDetail,
+                        where: { status: status || 'pending' }, // Trạng thái mặc định là 'pending'
+                        include: [{ model: models.Food }]
+                    },
+                    { model: models.Table, }
+                ]
+            });
+
+            return res.status(200).json({ data: orders });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Server error' });
+        }
+    },
 
 };
 

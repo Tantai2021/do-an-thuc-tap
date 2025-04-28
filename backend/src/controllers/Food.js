@@ -200,45 +200,59 @@ const Food = {
     deleteFoods: async (req, res) => {
         try {
             const { foodIds } = req.body;
-            // Kiểm tra đầu vào hợp lệ
+
             if (!Array.isArray(foodIds) || foodIds.length === 0) {
                 return res.status(400).json({ message: "Danh sách món cần ẩn không hợp lệ" });
             }
 
-            // Kiểm tra món nào đang được sử dụng trong OrderDetail
-            const usedFoods = await models.OrderDetail.findAll({
-                where: { food_id: { [Op.in]: foodIds } },
-                attributes: ['food_id'],
-                raw: true
+            // 1. Tìm tất cả món ăn đang được sử dụng trong các đơn hàng chưa thanh toán + chưa phục vụ
+            const usedInUnpaidUnservedOrders = await models.OrderDetail.findAll({
+                where: {
+                    food_id: { [Op.in]: foodIds },
+                    status: { [Op.notIn]: ['served', 'cancelled'] } // giả sử 'waiting' là trạng thái món chưa phục vụ, bạn sửa lại nếu khác nhé
+                },
+                include: [{
+                    model: models.Order,
+                    where: { status: { [Op.in]: ['unpaid', 'pending'] } }, // đơn chưa thanh toán
+                    include: [{
+                        model: models.Table,
+                        attributes: ['id', 'name']
+                    }],
+                }],
             });
 
-            const usedFoodIds = new Set(usedFoods.map(item => Number(item.food_id)));  // Tạo tập hợp ID đã sử dụng
-            const unUsedFoodIds = foodIds.filter(id => !usedFoodIds.has(Number(id)));  // Lọc món chưa dùng
+            // 2. Chuẩn bị dữ liệu để gửi socket cảnh báo
+            const warningData = usedInUnpaidUnservedOrders.map(item => ({
+                orderId: item['orders.id'],
+                foodId: item.food_id
+            }));
 
-            if (unUsedFoodIds.length === 0) {
-                return res.status(400).json({ message: "Tất cả món ăn đều đang được sử dụng trong đơn hàng" });
-            }
-
-            // Cập nhật trạng thái is_deleted cho các món chưa được sử dụng
+            // 3. Tiến hành khóa món (update is_deleted = true)
             const updatedFoods = await models.Food.update(
                 { is_deleted: true },
-                { where: { id: { [Op.in]: unUsedFoodIds } } }
+                { where: { id: { [Op.in]: foodIds } } }
             );
 
-            if (updatedFoods[0] > 0) {
-                return res.status(200).json({
-                    message: `Đã ẩn ${updatedFoods[0]} món ăn`,
-                    usedFoodIds,
-                    unUsedFoodIds
+            // 4. Gửi cảnh báo qua WebSocket nếu có món bị ảnh hưởng
+            if (warningData.length > 0) {
+                // Đây là giả sử bạn có hàm socket.io phát sự kiện
+                req.io.emit('food-locked-warning', {
+                    message: "Có món bị khóa đang nằm trong đơn hàng chưa phục vụ",
+                    details: usedInUnpaidUnservedOrders
                 });
-            } else {
-                return res.status(400).json({ message: "Không có món nào bị ẩn" });
             }
+
+            return res.status(200).json({
+                message: `Đã ẩn ${updatedFoods[0]} món ăn`,
+                warningAffectedFoods: warningData
+            });
+
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi khi ẩn nhiều món ăn" });
         }
     },
+
     restoreFood: async (req, res) => {
         try {
             const foodId = req.params.id;

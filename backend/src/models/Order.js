@@ -69,6 +69,9 @@ const Order = sequelize.define('orders', {
             if (!order.start_time) {
                 order.start_time = new Date();
             }
+            if (!order.createdAt) {
+                order.createdAt = new Date();
+            }
             const durationInHours = 1;
             order.end_time = new Date(order.start_time.getTime() + durationInHours * 60 * 60 * 1000);
         },
