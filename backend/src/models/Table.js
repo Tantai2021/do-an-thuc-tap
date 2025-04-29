@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db/database');
+const Area = require('./Area');
 const Table = sequelize.define('tables', {
     id: {
         type: DataTypes.INTEGER,
@@ -30,4 +31,8 @@ const Table = sequelize.define('tables', {
         defaultValue: false
     }
 }, { timestamps: true });
+
+Area.hasMany(Table, { foreignKey: 'area_id' });
+Table.belongsTo(Area, { foreignKey: 'area_id' });
+
 module.exports = Table;

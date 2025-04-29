@@ -48,7 +48,7 @@ const OrderDetail = sequelize.define('order_details', {
                 ...detail,
                 createdAt: new Date()
             }))
-        }
+        },
     }
 });
 

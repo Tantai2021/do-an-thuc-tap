@@ -8,6 +8,7 @@ router.get("/:orderId", OrderDetailController.getOrderDetailByOrderId);
 
 router.post("/", OrderDetailController.createOrderDetails);
 
+router.patch('/bulk/status', Authenticate, Authorize(['admin', 'chef', 'customer-service']), OrderDetailController.updateOrderDetailsStatus);
 router.patch('/:id/status', Authenticate, Authorize(['admin', 'chef']), OrderDetailController.updateOrderDetailStatus);
 
 // Route chef

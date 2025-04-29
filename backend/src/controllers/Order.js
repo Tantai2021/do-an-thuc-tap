@@ -49,6 +49,7 @@ const Order = {
                     { model: models.Customer },
                     { model: models.Staff },
                     { model: models.Table },
+                    { model: models.OrderDetail, include: [{ model: models.Food }] },
                 ]
             })
 

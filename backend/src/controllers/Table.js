@@ -4,7 +4,11 @@ const Table = {
     // Lấy danh sách tất cả bàn ăn
     getTables: async (req, res) => {
         try {
-            const tables = await models.Table.findAll();
+            const tables = await models.Table.findAll({
+                include: [
+                    { model: models.Area } // Khu vực
+                ]
+            });
             return res.status(200).json(tables);
         } catch (error) {
             console.error(error);

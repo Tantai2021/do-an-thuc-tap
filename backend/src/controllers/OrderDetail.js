@@ -81,7 +81,6 @@ const OrderDetail = {
     updateOrderDetailStatus: async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
-        console.log(id);
 
         // Các trạng thái hợp lệ
         const validStatuses = ['pending', 'prepared', 'served', 'cancelled'];
@@ -106,6 +105,50 @@ const OrderDetail = {
 
             req.io.emit('order-details-updated', orderDetail);
             return res.json({ message: 'Cập nhật trạng thái thành công', data: orderDetail });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Lỗi máy chủ' });
+        }
+    },
+    updateOrderDetailsStatus: async (req, res) => {
+        const { ids, status } = req.body;  // ids là mảng ID các OrderDetail
+        const validStatuses = ['pending', 'prepared', 'served', 'cancelled'];
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: 'Danh sách món cần cập nhật không hợp lệ' });
+        }
+
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+        }
+
+        try {
+            const orderDetails = await models.OrderDetail.findAll({
+                where: { order_detail_id: { [Op.in]: ids } },
+                include: [
+                    { model: models.Food },
+                    { model: models.Order, include: [{ model: models.Table }] }
+                ]
+            });
+
+            if (orderDetails.length === 0) {
+                return res.status(404).json({ error: 'Không tìm thấy các món cần cập nhật' });
+            }
+            console.log(orderDetails);
+            // Cập nhật từng OrderDetail
+            const updatePromises = orderDetails.map(orderDetail =>
+                orderDetail.update({ status: status })
+            );
+
+            await Promise.all(updatePromises);
+
+            // Gửi socket thông báo cập nhật nhiều món
+            req.io.emit('order-details-updated-multiple', orderDetails);
+
+            return res.json({
+                message: 'Cập nhật trạng thái thành công cho nhiều món',
+                data: orderDetails
+            });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ error: 'Lỗi máy chủ' });
