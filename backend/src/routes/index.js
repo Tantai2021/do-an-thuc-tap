@@ -9,6 +9,8 @@ const CustomerRoutes = require('./Customer');
 const OrderRoutes = require('./Order');
 const OrderDetailRoutes = require('./OrderDetail');
 const StaffRoutes = require('./Staff');
+const PaymentTransactionRoutes = require('./PaymentTransaction');
+const PromotionRoutes = require('./Promotion');
 const UploadRoutes = require("./Upload");
 
 const Router = (app) => {
@@ -23,8 +25,8 @@ const Router = (app) => {
     app.use('/api/staffs', StaffRoutes);
     app.use('/api/orders', OrderRoutes);
     app.use('/api/order-details', OrderDetailRoutes);
-
+    app.use('/api/payment-transactions', PaymentTransactionRoutes);
+    app.use('/api/promotions', PromotionRoutes);
     app.use("/api/uploads", UploadRoutes);
-
 };
 module.exports = Router;

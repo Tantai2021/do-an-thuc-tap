@@ -103,6 +103,58 @@ const OrderDetail = {
 
             await orderDetail.update({ status: status });
 
+            const servedItem = await models.OrderDetail.findAll({
+                where: {
+                    order_id: orderDetail.order_id,
+                    status: 'served'
+                }
+            })
+            const reCalculatedTotal = servedItem.reduce((total, item) => {
+                return total + parseFloat(item.sub_total);
+            }, 0);
+
+            const promotion = await models.Promotion.findAll({
+                where: {
+                    is_active: true,
+                    start_date: {
+                        [Op.lte]: new Date()
+                    },
+                    end_date: {
+                        [Op.gte]: new Date()
+                    },
+                    auto_apply: true,
+                },
+
+            });
+            if (promotion.length > 0) {
+                const promotionDiscount = promotion[0].value;
+                const promotionType = promotion[0].type;
+                let discount_amount = 0;
+                if (promotionType === 'percent_discount') {
+                    discount_amount = reCalculatedTotal * promotionDiscount / 100;
+                } else if (promotionType === 'fixed') {
+                    discount_amount = promotionDiscount;
+                }
+                const orderPromoted = await models.OrderPromotion.findOne({
+                    where: {
+                        order_id: orderDetail.order_id,
+                        promotion_id: promotion[0].id
+                    }
+                });
+                if (!orderPromoted) {
+                    await models.OrderPromotion.create({
+                        order_id: orderDetail.order_id,
+                        promotion_id: promotion[0].id,
+                        discount_amount: discount_amount
+                    });
+                }
+
+            }
+
+            // Cập nhật lại tổng tiền cho đơn hàng
+            const order = await models.Order.findByPk(orderDetail.order_id);
+            await order.update({ total_price: reCalculatedTotal });
+
             req.io.emit('order-details-updated', orderDetail);
             return res.json({ message: 'Cập nhật trạng thái thành công', data: orderDetail });
         } catch (error) {
@@ -134,13 +186,70 @@ const OrderDetail = {
             if (orderDetails.length === 0) {
                 return res.status(404).json({ error: 'Không tìm thấy các món cần cập nhật' });
             }
-            console.log(orderDetails);
             // Cập nhật từng OrderDetail
             const updatePromises = orderDetails.map(orderDetail =>
                 orderDetail.update({ status: status })
             );
 
             await Promise.all(updatePromises);
+
+            // Tính lại tổng tiền cho đơn hàng
+            const orderId = orderDetails[0].order_id; // Giả sử tất cả các OrderDetail đều thuộc cùng một đơn hàng
+            const servedItems = await models.OrderDetail.findAll({
+                where: {
+                    order_id: orderId,
+                    status: 'served'
+                }
+            });
+            const reCalculatedTotal = servedItems.reduce((total, item) => {
+                return total + parseFloat(item.sub_total);;
+            }, 0);
+
+            const promotion = await models.Promotion.findAll({
+                where: {
+                    is_active: true,
+                    start_date: {
+                        [Op.lte]: new Date()
+                    },
+                    end_date: {
+                        [Op.gte]: new Date()
+                    },
+                    auto_apply: true,
+                },
+
+            });
+            if (promotion.length > 0) {
+                const promotionDiscount = promotion[0].value;
+                const promotionType = promotion[0].type;
+                let discount_amount = 0;
+                if (promotionType === 'percent_discount') {
+                    discount_amount = reCalculatedTotal * (promotionDiscount / 100);
+                } else if (promotionType === 'fixed') {
+                    discount_amount = promotionDiscount;
+                }
+                const orderPromoted = await models.OrderPromotion.findOne({
+                    where: {
+                        order_id: orderDetails[0].order_id,
+                        promotion_id: promotion[0].id
+                    }
+                });
+                if (!orderPromoted) {
+                    await models.OrderPromotion.create({
+                        order_id: orderDetails[0].order_id,
+                        promotion_id: promotion[0].id,
+                        discount_amount: discount_amount
+                    });
+                } else {
+                    await orderPromoted.update({
+                        discount_amount: discount_amount
+                    });
+                }
+
+            }
+
+            // Cập nhật lại tổng tiền cho đơn hàng
+            const order = await models.Order.findByPk(orderId);
+            await order.update({ total_price: reCalculatedTotal });
 
             // Gửi socket thông báo cập nhật nhiều món
             req.io.emit('order-details-updated-multiple', orderDetails);

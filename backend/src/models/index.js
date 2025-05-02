@@ -9,6 +9,9 @@ const Table = require('./Table');
 const Area = require('./Area');
 const Customer = require('./Customer');
 const Staff = require('./Staff');
+const PaymentTransaction = require('./PaymenTransaction');
+const Promotion = require('./Promotion');
+const OrderPromotion = require('./OrderPromotion');
 module.exports = {
     Food,
     Ingredient,
@@ -20,5 +23,8 @@ module.exports = {
     Table,
     Area,
     Customer,
-    Staff
+    Staff,
+    PaymentTransaction,
+    Promotion,
+    OrderPromotion
 };
